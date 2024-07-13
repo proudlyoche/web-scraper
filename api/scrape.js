@@ -11,10 +11,12 @@ module.exports = async (req, res) => {
   try {
     const response = await axios.get(url);
     const $ = cheerio.load(response.data);
-    const result = [];
+    const result = {};
 
     $(selector).each((i, element) => {
-      result.push($(element).text().trim());
+      const name = $(element).find('.name').text().trim();
+      const value = $(element).find('.value').text().trim();
+      result[name] = value;
     });
 
     res.status(200).json(result);
@@ -22,4 +24,3 @@ module.exports = async (req, res) => {
     res.status(500).json({ error: 'Failed to scrape the webpage' });
   }
 };
-
