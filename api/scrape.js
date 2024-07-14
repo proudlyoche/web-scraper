@@ -1,24 +1,39 @@
-const axios = require('axios');
-const cheerio = require('cheerio');
+const puppeteer = require('puppeteer');
+const fs = require('fs');
+const path = require('path');
+const csvWriter = require('csv-writer').createObjectCsvWriter;
 
-module.exports = async (req, res) => {
-  const { url, selector } = req.query;
+// CSV writer setup
+const csvFilePath = path.join(__dirname, '../data/scraped_data.csv');
+const csv = csvWriter({
+  path: csvFilePath,
+  header: [
+    { id: 'title', title: 'Title' },
+    { id: 'price', title: 'Price' }
+    
+  ]
+});
 
-  if (!url || !selector) {
-    return res.status(400).json({ error: 'URL and selector are required' });
-  }
+async function scrape() {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
 
-  try {
-    const response = await axios.get(url);
-    const $ = cheerio.load(response.data);
-    const result = [];
+  await page.goto('https://www.konga.com');
 
-    $(selector).each((i, element) => {
-      result.push($(element).text().trim());
-    });
+  // Scrape the data
+  const data = await page.evaluate(() => {
+    
 
-    res.status(200).json(result);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to scrape the webpage' });
-  }
-};
+    const items = document.querySelectorAll('.item');
+    return Array.from(items).map(item => ({
+      title: item.querySelector('.title').innerText,
+      price: item.querySelector('.price').innerText
+    }));
+  });
+
+  await csv.writeRecords(data); // Write data to CSV
+
+  await browser.close();
+}
+
+scrape();
