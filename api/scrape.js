@@ -11,12 +11,10 @@ module.exports = async (req, res) => {
   try {
     const response = await axios.get(url);
     const $ = cheerio.load(response.data);
-    const result = {};
+    const result = [];
 
     $(selector).each((i, element) => {
-      const name = $(element).find('.name').text().trim();
-      const value = $(element).find('.value').text().trim();
-      result[name] = value;
+      result.push($(element).text().trim());
     });
 
     res.status(200).json(result);
